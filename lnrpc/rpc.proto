@@ -819,6 +819,14 @@ message Transaction {
     string raw_tx_hex = 9 [ json_name = "raw_tx_hex" ];
 }
 message GetTransactionsRequest {
+    /// The transaction id
+    bytes txid = 1 [json_name = "txid"];
+
+    /// The number of confirmations
+    int32 num_confirmations = 2 [ json_name = "num_confirmations" ];
+
+    /// The height of the block this transaction was included in
+    int32 block_height = 3 [ json_name = "block_height" ];
 }
 message TransactionDetails {
     /// The list of transactions relevant to the wallet.

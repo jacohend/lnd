@@ -3628,7 +3628,7 @@ func (r *rpcServer) SubscribeTransactions(req *lnrpc.GetTransactionsRequest,
 // GetTransactions returns a list of describing all the known transactions
 // relevant to the Wallet.
 func (r *rpcServer) GetTransactions(ctx context.Context,
-	_ *lnrpc.GetTransactionsRequest) (*lnrpc.TransactionDetails, error) {
+	req *lnrpc.GetTransactionsRequest) (*lnrpc.TransactionDetails, error) {
 
 	// TODO(roasbeef): add pagination support
 	transactions, err := r.server.cc.Wallet.ListTransactionDetails()
@@ -3640,6 +3640,15 @@ func (r *rpcServer) GetTransactions(ctx context.Context,
 		Transactions: make([]*lnrpc.Transaction, len(transactions)),
 	}
 	for i, tx := range transactions {
+		if tx.BlockHeight < req.BlockHeight{
+			continue
+		}
+		if len(req.Txid) != 0 && bytes.Compare(tx.Hash.CloneBytes(), req.Txid) == 0 {
+			continue
+		}
+		if tx.NumConfirmations < req.NumConfirmations {
+			continue
+		}
 		var destAddresses []string
 		for _, destAddress := range tx.DestAddresses {
 			destAddresses = append(destAddresses, destAddress.EncodeAddress())

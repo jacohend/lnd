@@ -1143,6 +1143,32 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "txid",
+            "description": "/ The transaction id.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "byte"
+          },
+          {
+            "name": "num_confirmations",
+            "description": "/ The number of confirmations.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "block_height",
+            "description": "/ The height of the block this transaction was included in.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
         "tags": [
           "Lightning"
         ]
