@@ -3677,6 +3677,76 @@ func (r *rpcServer) GetTransactions(ctx context.Context,
 	return txDetails, nil
 }
 
+// GetBLock returns a list of describing all the known transactions
+// relevant to the Wallet.
+func (r *rpcServer) GetBlock(ctx context.Context,
+	req *lnrpc.GetBlockRequest) (*lnrpc.BlockDetails, error) {
+	var hash *chainhash.Hash
+	var err error
+	if req.BlockHash == "" {
+		hash, err = r.server.cc.ChainIO.GetBlockHash(int64(req.BlockHeight))
+	} else {
+		hash, err = chainhash.NewHashFromStr(req.BlockHash)
+	}
+	if err != nil {
+		return nil, err
+	}
+	block, err := r.server.cc.ChainIO.GetBlock(hash)
+	if err != nil {
+		return nil, err
+	}
+	txDetails := &lnrpc.TransactionDetails{
+		Transactions: make([]*lnrpc.Transaction, len(block.Transactions)),
+	}
+	for i, tx := range block.Transactions{
+		txDetails.Transactions[i] = &lnrpc.Transaction{
+			TxHash:           tx.Hash.String(),
+			Amount:           int64(tx.Value),
+			NumConfirmations: tx.NumConfirmations,
+			BlockHash:        blockHash,
+			BlockHeight:      tx.BlockHeight,
+			TimeStamp:        tx.Timestamp,
+			TotalFees:        tx.TotalFees,
+			DestAddresses:    destAddresses,
+			RawTxHex:         hex.EncodeToString(tx.RawTx),
+		}
+	}
+
+	// TODO(roasbeef): add pagination support
+	transactions, err := r.server.cc.Wallet.ListTransactionDetails()
+	if err != nil {
+		return nil, err
+	}
+
+
+	for i, tx := range transactions {
+		if tx.BlockHeight < req.BlockHeight{
+			continue
+		}
+		if len(req.Txid) != 0 && bytes.Compare(tx.Hash.CloneBytes(), req.Txid) == 0 {
+			continue
+		}
+		if tx.NumConfirmations < req.NumConfirmations {
+			continue
+		}
+		var destAddresses []string
+		for _, destAddress := range tx.DestAddresses {
+			destAddresses = append(destAddresses, destAddress.EncodeAddress())
+		}
+
+		// We also get unconfirmed transactions, so BlockHash can be
+		// nil.
+		blockHash := ""
+		if tx.BlockHash != nil {
+			blockHash = tx.BlockHash.String()
+		}
+
+
+	}
+
+	return txDetails, nil
+}
+
 // DescribeGraph returns a description of the latest graph state from the PoV
 // of the node. The graph information is partitioned into two components: all
 // the nodes/vertexes, and all the edges that connect the vertexes themselves.
